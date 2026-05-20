@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Writer Agent - 智能写作助手</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✍️</text></svg>">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f0abfc;
+            --accent: #c084fc;
+            --bg: #faf5ff;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e9d5ff;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        /* 项目切换栏 */
+        .project-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .project-bar label {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .project-bar select {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .project-bar select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-new-project {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+        }
+
+        .btn-new-project:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-manage-project {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-manage-project:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .current-project-badge {
+            padding: 6px 12px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .global-badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, var(--primary), var(--accent));
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: var(--bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--primary);
+        }
+
+        .checkbox-item.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+
+        .checkbox-item input {
+            display: none;
+        }
+
+        .result-area {
+            min-height: 400px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .output-content {
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-size: 1rem;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .output-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .output-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            padding: 10px 16px;
+            font-size: 0.875rem;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            color: var(--text-light);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: var(--bg);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .outline-item {
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .outline-item h4 {
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .outline-item ul {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            padding-left: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content.wide {
+            max-width: 700px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        /* 角色卡片样式 */
+        .character-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .character-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        }
+
+        .character-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .character-card-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--primary);
+        }
+
+        .character-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .character-card-actions button {
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-edit:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: var(--error);
+        }
+
+        .btn-delete:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .character-card-info {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .character-card-info span {
+            display: inline-block;
+            margin-right: 12px;
+            margin-bottom: 4px;
+        }
+
+        .character-card-traits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .trait-tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* 项目卡片样式 */
+        .project-card {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .project-card:hover {
+            border-color: var(--primary);
+        }
+
+        .project-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .project-card-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .project-card-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 8px;
+        }
+
+        .project-card-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 归属标记 */
+        .ownership-badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        .ownership-global {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .ownership-project {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+        }
+
+        /* 项目选择开关 */
+        .project-scope-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .scope-option {
+            flex: 1;
+            padding: 8px 12px;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .scope-option:hover {
+            border-color: var(--primary);
+        }
+
+        .scope-option.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* 关系字段样式 */
+        .relationship-field {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .relationship-field select,
+        .relationship-field input,
+        .relationship-field textarea {
+            margin-bottom: 8px;
+        }
+
+        .relationship-field textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .relationship-field .remove-btn {
+            background: #fee2e2;
+            color: var(--error);
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .relationship-field .remove-btn:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .relationship-type-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Creative Writer Agent</h1>
+            <p>多Agent协作智能写作系统 · 小说 · 文案 · 论文</p>
+        </header>
+
+        <!-- 项目切换栏 -->
+        <div class="project-bar">
+            <label>当前工作：</label>
+            <select id="projectSelect" onchange="switchProject()">
+                <option value="">全局模式</option>
+            </select>
+            <span id="currentProjectBadge" class="current-project-badge global-badge">全局</span>
+            <div class="project-actions">
+                <button class="btn-small btn-new-project" onclick="openNewProjectModal()">
+                    + 新建工作
+                </button>
+                <button class="btn-small btn-manage-project" onclick="openManageProjectModal()">
+                    管理
+                </button>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <!-- 左侧：写作设置 -->
+            <div class="panel">
+                <div class="panel-title">写作设置</div>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="basic">基础设置</button>
+                    <button class="tab" data-tab="character">角色设定</button>
+                    <button class="tab" data-tab="material">素材库</button>
+                </div>
+
+                <!-- 基础设置 -->
+                <div class="tab-content active" id="tab-basic">
+                    <div class="form-group">
+                        <label>任务类型</label>
+                        <select id="taskType">
+                            <option value="novel">小说</option>
+                            <option value="article">文章</option>
+                            <option value="copywriting">文案</option>
+                            <option value="paper">论文</option>
+                            <option value="script">剧本</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>写作主题</label>
+                        <textarea id="topic" placeholder="描述你想要写作的内容主题..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>风格要求</label>
+                        <select id="style">
+                            <option value="literary">文艺清新</option>
+                            <option value="business">商务正式</option>
+                            <option value="casual">随性自然</option>
+                            <option value="romantic">浪漫温馨</option>
+                            <option value="humorous">幽默风趣</option>
+                            <option value="serious">严肃深刻</option>
+                            <option value="flowery">华丽辞藻</option>
+                            <option value="simple">简洁明了</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>迭代次数</label>
+                        <select id="iterations">
+                            <option value="1">1次（快速）</option>
+                            <option value="2">2次（平衡）</option>
+                            <option value="3" selected>3次（推荐）</option>
+                            <option value="5">5次（精细）</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>主角选择</label>
+                        <select id="protagonistSelect">
+                            <option value="">不指定主角</option>
+                            <!-- 动态加载角色列表 -->
+                        </select>
+                        <small style="color: var(--text-secondary); margin-top: 4px; display: block;">选择后AI写作时会以该角色视角展开故事</small>
+                    </div>
+                </div>
+
+                <!-- 角色设定 -->
+                <div class="tab-content" id="tab-character">
+                    <div id="characterManager" style="margin-bottom: 16px;">
+                        <!-- 动态加载角色卡片 -->
+                    </div>
+
+                    <button class="btn btn-secondary" onclick="openCharacterModal()" style="width: 100%;">
+                        + 创建新角色
+                    </button>
+                </div>
+
+                <!-- 素材库 -->
+                <div class="tab-content" id="tab-material">
+                    <div class="form-group">
+                        <label>上传素材文件</label>
+                        <input type="file" id="materialFile" accept=".docx,.pdf,.txt">
+                    </div>
+
+                    <div class="form-group">
+                        <label>或直接粘贴文本</label>
+                        <textarea id="materialText" placeholder="粘贴参考文本..."></textarea>
+                    </div>
+
+                    <button class="btn btn-secondary" onclick="addMaterial()">
+                        + 添加素材
+                    </button>
+
+                    <div id="materialList" style="margin-top: 16px;">
+                        <!-- 动态加载 -->
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="startBtn" onclick="startWriting()">
+                    开始写作
+                </button>
+            </div>
+
+            <!-- 右侧：写作结果 -->
+            <div class="panel">
+                <div class="panel-title">写作结果</div>
+
+                <div class="result-area" id="resultArea">
+                    <div class="placeholder">
+                        <div class="placeholder-icon">📝</div>
+                        <p>设置好参数后，点击「开始写作」</p>
+                        <p>系统将自动规划大纲、创作内容并评审迭代</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色创建/编辑模态框 -->
+    <div class="modal" id="characterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">创建角色</h3>
+                <button class="modal-close" onclick="closeCharacterModal()">&times;</button>
+            </div>
+
+            <input type="hidden" id="editCharId" value="">
+
+            <div class="form-group">
+                <label>角色名称 *</label>
+                <input type="text" id="charName" placeholder="输入角色名">
+            </div>
+
+            <div class="form-group">
+                <label>性别</label>
+                <select id="charGender">
+                    <option value="">未设定</option>
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                    <option value="other">其他</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>年龄（可选）</label>
+                <input type="number" id="charAge" placeholder="年龄">
+            </div>
+
+            <div class="form-group">
+                <label>职业（可选）</label>
+                <input type="text" id="charOccupation" placeholder="职业">
+            </div>
+
+            <div class="form-group">
+                <label>MBTI性格类型（可选）</label>
+                <input type="text" id="charMbti" placeholder="如：ENFP, ISTJ">
+            </div>
+
+            <div class="form-group">
+                <label>性格特点（逗号分隔）</label>
+                <input type="text" id="charTraits" placeholder="如：开朗,善良,有点傲娇">
+            </div>
+
+            <div class="form-group">
+                <label>说话风格（可选）</label>
+                <input type="text" id="charSpeakingStyle" placeholder="如：温柔俏皮,说话带儿化音">
+            </div>
+
+            <div class="form-group">
+                <label>口头禅（逗号分隔）</label>
+                <input type="text" id="charCatchphrases" placeholder="如：哈哈,这可太...">
+            </div>
+
+            <div class="form-group">
+                <label>背景故事</label>
+                <textarea id="charBackground" placeholder="描述角色的背景经历..."></textarea>
+            </div>
+
+            <!-- 关系管理 -->
+            <div class="form-group">
+                <label>与其他角色的关系</label>
+                <div id="relationshipContainer">
+                    <!-- 动态添加关系 -->
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addRelationshipField()" style="width: 100%; margin-top: 8px;">
+                    + 添加关系
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>角色归属</label>
+                <div class="project-scope-toggle" id="charScopeToggle">
+                    <div class="scope-option selected" data-value="project" onclick="selectCharScope(this)">
+                        专属当前工作
+                    </div>
+                    <div class="scope-option" data-value="global" onclick="selectCharScope(this)">
+                        全局共享
+                    </div>
+                </div>
+                <input type="hidden" id="charIsGlobal" value="false">
+            </div>
+
+            <button class="btn btn-primary" id="saveCharBtn" onclick="createCharacter()">
+                创建角色
+            </button>
+        </div>
+    </div>
+
+    <!-- 角色详情查看模态框 -->
+    <div class="modal" id="characterDetailModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="detailCharName">角色详情</h3>
+                <button class="modal-close" onclick="closeCharacterDetailModal()">&times;</button>
+            </div>
+            <div id="characterDetailContent">
+                <!-- 动态加载 -->
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button class="btn btn-secondary" onclick="closeCharacterDetailModal()" style="flex:1;">关闭</button>
+                <button class="btn btn-primary" id="editCharBtn" style="flex:1;">编辑角色</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建/编辑项目模态框 -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="projectModalTitle">新建工作</h3>
+                <button class="modal-close" onclick="closeProjectModal()">&times;</button>
+            </div>
+
+            <input type="hidden" id="editProjectId" value="">
+
+            <div class="form-group">
+                <label>工作名称 *</label>
+                <input type="text" id="projectName" placeholder="输入工作名称，如：我的小说项目">
+            </div>
+
+            <div class="form-group">
+                <label>描述（可选）</label>
+                <textarea id="projectDescription" placeholder="简单描述这个工作的内容..."></textarea>
+            </div>
+
+            <button class="btn btn-primary" id="saveProjectBtn">
+                创建工作
+            </button>
+        </div>
+    </div>
+
+    <!-- 项目管理模态框 -->
+    <div class="modal" id="manageProjectModal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h3>管理工作</h3>
+                <button class="modal-close" onclick="closeManageProjectModal()">&times;</button>
+            </div>
+
+            <div id="projectList" style="max-height: 400px; overflow-y: auto;">
+                <!-- 动态加载 -->
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn btn-primary" onclick="closeManageProjectModal(); openNewProjectModal();">
+                    + 创建新工作
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let currentCharacters = [];
+        let currentProjectId = null;
+        let currentProjectName = '';
+        let projects = [];
+
+        // Tab切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ========== 项目管理 ==========
+
+        // 加载项目列表
+        async function loadProjects() {
+            try {
+                const res = await fetch(`${API_BASE}/project/`);
+                const data = await res.json();
+                if (data.success && data.data) {
+                    projects = data.data;
+                    renderProjectSelect();
+                }
+            } catch (e) {
+                console.log('Failed to load projects:', e);
+            }
+        }
+
+        // 渲染项目选择下拉框
+        function renderProjectSelect() {
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '<option value="">全局模式</option>';
+            
+            projects.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.name;
+                if (p.id === currentProjectId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            // 更新徽章
+            const badge = document.getElementById('currentProjectBadge');
+            if (currentProjectId) {
+                badge.textContent = currentProjectName || '当前工作';
+                badge.className = 'current-project-badge';
+            } else {
+                badge.textContent = '全局';
+                badge.className = 'current-project-badge global-badge';
+            }
+        }
+
+        // 切换项目
+        async function switchProject() {
+            const select = document.getElementById('projectSelect');
+            const selectedValue = select.value;
+
+            if (selectedValue === '') {
+                currentProjectId = null;
+                currentProjectName = '';
+            } else {
+                currentProjectId = selectedValue;
+                const project = projects.find(p => p.id === currentProjectId);
+                currentProjectName = project ? project.name : '';
+            }
+
+            localStorage.setItem('currentProjectId', currentProjectId || '');
+            localStorage.setItem('currentProjectName', currentProjectName);
+
+            renderProjectSelect();
+            await loadCharacters();
+            await loadMaterials();
+        }
+
+        // 打开新建项目模态框
+        function openNewProjectModal() {
+            document.getElementById('projectModalTitle').textContent = '新建工作';
+            document.getElementById('saveProjectBtn').textContent = '创建工作';
+            document.getElementById('saveProjectBtn').onclick = () => saveProject();
+            document.getElementById('editProjectId').value = '';
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectDescription').value = '';
+            document.getElementById('projectModal').classList.add('active');
+        }
+
+        // 打开编辑项目模态框
+        function openEditProjectModal(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            document.getElementById('projectModalTitle').textContent = '编辑工作';
+            document.getElementById('saveProjectBtn').textContent = '保存修改';
+            document.getElementById('saveProjectBtn').onclick = () => saveProject(projectId);
+            document.getElementById('editProjectId').value = projectId;
+            document.getElementById('projectName').value = project.name;
+            document.getElementById('projectDescription').value = project.description || '';
+            document.getElementById('projectModal').classList.add('active');
+        }
+
+        // 关闭项目模态框
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.remove('active');
+        }
+
+        // 保存项目
+        async function saveProject(editId = null) {
+            // 防御：HTML onclick 会把 event 对象传进来，过滤掉
+            if (editId && typeof editId === 'object') {
+                editId = null;
+            }
+            const name = document.getElementById('projectName').value.trim();
+            if (!name) {
+                alert('请输入工作名称');
+                return;
+            }
+
+            const description = document.getElementById('projectDescription').value.trim();
+
+            try {
+                if (editId) {
+                    // 更新
+                    const res = await fetch(`${API_BASE}/project/${editId}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ name, description })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert('工作更新成功！');
+                        closeProjectModal();
+                        await loadProjects();
+                    }
+                } else {
+                    // 创建
+                    const res = await fetch(`${API_BASE}/project/create`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ name, description })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert('工作创建成功！');
+                        closeProjectModal();
+                        await loadProjects();
+                        // 自动切换到新项目
+                        currentProjectId = result.data.id;
+                        currentProjectName = name;
+                        localStorage.setItem('currentProjectId', currentProjectId);
+                        localStorage.setItem('currentProjectName', currentProjectName);
+                        renderProjectSelect();
+                        await loadCharacters();
+                        await loadMaterials();
+                    }
+                }
+            } catch (e) {
+                alert('操作失败：' + e.message);
+            }
+        }
+
+        // 删除项目
+        async function deleteProject(projectId, projectName) {
+            if (!confirm(`确定要删除工作「${projectName}」吗？\n\n这将同时删除该工作下的所有角色、素材和写作会话，此操作不可恢复！`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/project/${projectId}`, {
+                    method: 'DELETE'
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('工作删除成功！');
+                    
+                    // 如果删除的是当前项目，切换到全局
+                    if (currentProjectId === projectId) {
+                        currentProjectId = null;
+                        currentProjectName = '';
+                        localStorage.setItem('currentProjectId', '');
+                        localStorage.setItem('currentProjectName', '');
+                        renderProjectSelect();
+                        await loadCharacters();
+                        await loadMaterials();
+                    }
+                    
+                    closeManageProjectModal();
+                    await loadProjects();
+                }
+            } catch (e) {
+                alert('删除失败：' + e.message);
+            }
+        }
+
+        // 打开项目管理模态框
+        async function openManageProjectModal() {
+            await loadProjects();
+            
+            const container = document.getElementById('projectList');
+            
+            if (projects.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <p>还没有创建任何工作</p>
+                        <p style="font-size:0.85rem;margin-top:8px;">点击下方按钮创建第一个工作</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = projects.map(p => `
+                    <div class="project-card">
+                        <div class="project-card-header">
+                            <span class="project-card-name">${p.name}</span>
+                            <div class="character-card-actions">
+                                <button class="btn-edit" onclick="openEditProjectModal('${p.id}')">编辑</button>
+                                <button class="btn-delete" onclick="deleteProject('${p.id}', '${p.name}')">删除</button>
+                            </div>
+                        </div>
+                        ${p.description ? `<p style="font-size:0.9rem;color:var(--text-light);margin:8px 0;">${p.description}</p>` : ''}
+                        <div class="project-card-stats">
+                            <span>👤 ${p.character_count || 0} 个角色</span>
+                            <span>📄 ${p.material_count || 0} 个素材</span>
+                            <span>📝 ${p.session_count || 0} 个会话</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('manageProjectModal').classList.add('active');
+        }
+
+        // 关闭项目管理模态框
+        function closeManageProjectModal() {
+            document.getElementById('manageProjectModal').classList.remove('active');
+        }
+
+        // ========== 角色管理 ==========
+
+        // 加载角色列表
+        async function loadCharacters() {
+            try {
+                const url = currentProjectId 
+                    ? `${API_BASE}/character/?project_id=${currentProjectId}`
+                    : `${API_BASE}/character/`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.success && data.data) {
+                    currentCharacters = data.data;
+                    renderCharacterManager(data.data);
+                    updateProtagonistSelect(data.data);
+                }
+            } catch (e) {
+                console.log('API not available, using local storage');
+                currentCharacters = JSON.parse(localStorage.getItem('characters') || '[]');
+                renderCharacterManager(currentCharacters);
+                updateProtagonistSelect(currentCharacters);
+            }
+        }
+
+        // 更新主角选择下拉框
+        function updateProtagonistSelect(characters) {
+            const select = document.getElementById('protagonistSelect');
+            if (!select) return;
+            
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">不指定主角</option>';
+            
+            characters.forEach(c => {
+                const name = c.basic?.name || c.name || '未命名';
+                const gender = c.basic?.gender || '';
+                const genderText = gender === 'male' ? '（男）' : gender === 'female' ? '（女）' : '';
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = `${name} ${genderText}`;
+                select.appendChild(option);
+            });
+            
+            // 恢复之前的选择
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+
+        // 渲染角色管理列表
+        function renderCharacterManager(characters) {
+            const container = document.getElementById('characterManager');
+
+            if (characters.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👤</div>
+                        <p>还没有创建角色</p>
+                        <p style="font-size:0.85rem;margin-top:8px;">
+                            ${currentProjectId ? '为这个工作创建专属角色，或使用全局角色' : '点击下方按钮创建第一个角色'}
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = characters.map(c => {
+                const name = c.basic?.name || c.name || '未命名';
+                const gender = c.basic?.gender || c.gender || '';
+                const genderText = gender === 'male' ? '♂男' : gender === 'female' ? '♀女' : '';
+                const age = c.basic?.age || c.age || '';
+                const occupation = c.basic?.occupation || c.occupation || '';
+                const mbti = c.personality?.mbti || c.mbti || '';
+                const traits = c.personality?.traits || c.personality_traits || [];
+                const catchphrases = c.speaking?.catchphrases || c.catchphrases || [];
+                const relationships = c.relationships || {};
+                const relCount = Object.keys(relationships).length;
+                const isGlobal = c.project_id === null || c.project_id === undefined;
+
+                return `
+                    <div class="character-card" data-id="${c.id}">
+                        <div class="character-card-header">
+                            <span class="character-card-name">
+                                ${name}
+                                ${genderText ? `<span class="trait-tag" style="background:rgba(99,102,241,0.1);">${genderText}</span>` : ''}
+                                <span class="ownership-badge ${isGlobal ? 'ownership-global' : 'ownership-project'}">
+                                    ${isGlobal ? '全局' : '专属'}
+                                </span>
+                            </span>
+                            <div class="character-card-actions">
+                                <button class="btn-edit" onclick="editCharacter('${c.id}')">编辑</button>
+                                <button class="btn-delete" onclick="deleteCharacter('${c.id}', '${name}')">删除</button>
+                            </div>
+                        </div>
+                        <div class="character-card-info">
+                            ${age ? `<span>🎂 ${age}岁</span>` : ''}
+                            ${occupation ? `<span>💼 ${occupation}</span>` : ''}
+                            ${mbti ? `<span>🔤 ${mbti}</span>` : ''}
+                            ${catchphrases.length > 0 ? `<span>💬 "${catchphrases[0]}"</span>` : ''}
+                            ${relCount > 0 ? `<span>🔗 ${relCount}个关系</span>` : ''}
+                        </div>
+                        ${traits.length > 0 ? `
+                            <div class="character-card-traits">
+                                ${traits.slice(0, 4).map(t => `<span class="trait-tag">${t}</span>`).join('')}
+                                ${traits.length > 4 ? `<span class="trait-tag">+${traits.length - 4}</span>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 角色归属切换
+        function selectCharScope(el) {
+            document.querySelectorAll('#charScopeToggle .scope-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            el.classList.add('selected');
+            document.getElementById('charIsGlobal').value = el.dataset.value === 'global' ? 'true' : 'false';
+        }
+
+        // 打开创建角色模态框
+        function openCharacterModal() {
+            document.getElementById('modalTitle').textContent = '创建角色';
+            document.getElementById('saveCharBtn').textContent = '创建角色';
+            document.getElementById('saveCharBtn').onclick = createCharacter;
+            clearCharacterForm();
+            
+            // 根据当前项目设置默认归属
+            if (currentProjectId) {
+                document.querySelector('#charScopeToggle .scope-option[data-value="project"]').classList.add('selected');
+                document.querySelector('#charScopeToggle .scope-option[data-value="global"]').classList.remove('selected');
+                document.getElementById('charIsGlobal').value = 'false';
+            } else {
+                document.querySelector('#charScopeToggle .scope-option[data-value="global"]').classList.add('selected');
+                document.querySelector('#charScopeToggle .scope-option[data-value="project"]').classList.remove('selected');
+                document.getElementById('charIsGlobal').value = 'true';
+            }
+            
+            document.getElementById('characterModal').classList.add('active');
+        }
+
+        // 关闭创建/编辑角色模态框
+        function closeCharacterModal() {
+            document.getElementById('characterModal').classList.remove('active');
+            clearCharacterForm();
+        }
+
+        // 清空表单
+        function clearCharacterForm() {
+            document.getElementById('editCharId').value = '';
+            document.getElementById('charName').value = '';
+            document.getElementById('charGender').value = '';
+            ['charAge', 'charOccupation', 'charMbti', 'charTraits',
+             'charSpeakingStyle', 'charCatchphrases', 'charBackground'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            // 清空关系字段
+            document.getElementById('relationshipContainer').innerHTML = '';
+        }
+
+        // 获取所有关系数据
+        function getRelationshipsData() {
+            const relationships = [];
+            document.querySelectorAll('.relationship-field').forEach(field => {
+                const relType = field.querySelector('.rel-type').value;
+                const relName = field.querySelector('.rel-name').value.trim();
+                const relDesc = field.querySelector('.rel-desc').value.trim();
+                const relStory = field.querySelector('.rel-story').value.trim();
+                if (relName && relType) {
+                    relationships.push({
+                        type: relType,
+                        related_name: relName,
+                        description: relDesc,
+                        story: relStory
+                    });
+                }
+            });
+            return relationships;
+        }
+
+        // 添加关系字段
+        function addRelationshipField(data = {}) {
+            const container = document.getElementById('relationshipContainer');
+            const index = container.children.length;
+
+            // 获取除了当前正在编辑的角色之外的所有角色（用于下拉选择）
+            const otherChars = currentCharacters.filter(c => {
+                const editId = document.getElementById('editCharId').value;
+                return c.id !== editId;
+            });
+
+            const html = `
+                <div class="relationship-field" data-index="${index}">
+                    <div class="relationship-type-label">关系 ${index + 1}</div>
+                    <select class="rel-type" onchange="toggleRelNameInput(this)">
+                        <option value="">选择关系类型</option>
+                        <option value="friend" ${data.type === 'friend' ? 'selected' : ''}>朋友</option>
+                        <option value="lover" ${data.type === 'lover' ? 'selected' : ''}>恋人</option>
+                        <option value="family" ${data.type === 'family' ? 'selected' : ''}>家人</option>
+                        <option value="colleague" ${data.type === 'colleague' ? 'selected' : ''}>同事</option>
+                        <option value="rival" ${data.type === 'rival' ? 'selected' : ''}>竞争对手</option>
+                        <option value="mentor" ${data.type === 'mentor' ? 'selected' : ''}>师徒</option>
+                        <option value="enemy" ${data.type === 'enemy' ? 'selected' : ''}>敌人</option>
+                        <option value="custom" ${!['friend','lover','family','colleague','rival','mentor','enemy'].includes(data.type) && data.type ? 'selected' : ''}>自定义</option>
+                    </select>
+                    <input type="text" class="rel-name" placeholder="对方角色名称" value="${data.related_name || ''}" style="display:${data.type === 'custom' || !otherChars.length ? 'block' : 'none'}">
+                    <select class="rel-char-select" onchange="onCharSelect(this)" ${otherChars.length ? '' : 'style="display:none"'}>
+                        <option value="">或从现有角色选择</option>
+                        ${otherChars.map(c => `<option value="${c.basic?.name || c.name}">${c.basic?.name || c.name}</option>`).join('')}
+                    </select>
+                    <input type="text" class="rel-desc" placeholder="关系描述（如：青梅竹马）" value="${data.description || ''}">
+                    <textarea class="rel-story" placeholder="两人之间的故事/回忆...">${data.story || ''}</textarea>
+                    <button type="button" class="remove-btn" onclick="removeRelationshipField(this)">删除关系</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // 角色选择处理
+        function onCharSelect(select) {
+            const field = select.closest('.relationship-field');
+            const nameInput = field.querySelector('.rel-name');
+            const selectedName = select.value;
+            if (selectedName) {
+                nameInput.value = selectedName;
+            }
+        }
+
+        // 切换自定义名称输入
+        function toggleRelNameInput(select) {
+            const field = select.closest('.relationship-field');
+            const nameInput = field.querySelector('.rel-name');
+            if (select.value === 'custom') {
+                nameInput.style.display = 'block';
+                nameInput.placeholder = '输入自定义关系';
+            } else {
+                nameInput.style.display = 'none';
+            }
+        }
+
+        // 删除关系字段
+        function removeRelationshipField(btn) {
+            const field = btn.closest('.relationship-field');
+            field.remove();
+        }
+
+        // 填充表单数据
+        function fillCharacterForm(c) {
+            document.getElementById('editCharId').value = c.id;
+            document.getElementById('charName').value = c.basic?.name || c.name || '';
+            document.getElementById('charGender').value = c.basic?.gender || c.gender || '';
+            document.getElementById('charAge').value = c.basic?.age || c.age || '';
+            document.getElementById('charOccupation').value = c.basic?.occupation || c.occupation || '';
+            document.getElementById('charMbti').value = c.personality?.mbti || c.mbti || '';
+            document.getElementById('charTraits').value = (c.personality?.traits || c.personality_traits || []).join(', ');
+            document.getElementById('charSpeakingStyle').value = c.speaking?.style_description || c.speaking_style || '';
+            document.getElementById('charCatchphrases').value = (c.speaking?.catchphrases || c.catchphrases || []).join(', ');
+            document.getElementById('charBackground').value = c.background?.origin || c.background || '';
+
+            // 填充关系
+            const relContainer = document.getElementById('relationshipContainer');
+            relContainer.innerHTML = '';
+            const relationships = c.relationships || {};
+            for (const [relName, relData] of Object.entries(relationships)) {
+                addRelationshipField({
+                    type: relData.type || 'friend',
+                    related_name: relName,
+                    description: relData.description || '',
+                    story: relData.story || ''
+                });
+            }
+
+            // 设置归属
+            const isGlobal = c.project_id === null || c.project_id === undefined;
+            document.getElementById('charIsGlobal').value = isGlobal ? 'true' : 'false';
+            document.querySelectorAll('#charScopeToggle .scope-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.querySelector(`#charScopeToggle .scope-option[data-value="${isGlobal ? 'global' : 'project'}"]`).classList.add('selected');
+        }
+
+        // 创建角色
+        async function createCharacter() {
+            const name = document.getElementById('charName').value.trim();
+            if (!name) {
+                alert('请输入角色名称');
+                return;
+            }
+
+            const isGlobal = document.getElementById('charIsGlobal').value === 'true';
+            const projectId = isGlobal ? null : currentProjectId;
+
+            const data = {
+                name: name,
+                gender: document.getElementById('charGender').value || null,
+                age: document.getElementById('charAge').value || null,
+                occupation: document.getElementById('charOccupation').value || null,
+                mbti: document.getElementById('charMbti').value || null,
+                personality_traits: document.getElementById('charTraits').value.split(',').map(s => s.trim()).filter(Boolean),
+                speaking_style: document.getElementById('charSpeakingStyle').value || null,
+                catchphrases: document.getElementById('charCatchphrases').value.split(',').map(s => s.trim()).filter(Boolean),
+                background: document.getElementById('charBackground').value || null,
+                relationships: getRelationshipsData(),
+                project_id: projectId
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/character/create`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('角色创建成功！');
+                    closeCharacterModal();
+                    loadCharacters();
+                }
+            } catch (e) {
+                // Local fallback
+                const chars = JSON.parse(localStorage.getItem('characters') || '[]');
+                const newChar = {
+                    id: Date.now().toString(),
+                    project_id: projectId,
+                    basic: { name: data.name, gender: data.gender, age: data.age, occupation: data.occupation },
+                    personality: { traits: data.personality_traits, mbti: data.mbti },
+                    speaking: { catchphrases: data.catchphrases, style_description: data.speaking_style },
+                    background: { origin: data.background },
+                    relationships: getRelationshipsData().reduce((acc, r) => {
+                        acc[r.related_name] = { type: r.type, description: r.description, story: r.story };
+                        return acc;
+                    }, {})
+                };
+                chars.push(newChar);
+                localStorage.setItem('characters', JSON.stringify(chars));
+                alert('角色创建成功！(本地存储)');
+                closeCharacterModal();
+                loadCharacters();
+            }
+        }
+
+        // 编辑角色
+        async function editCharacter(charId) {
+            const char = currentCharacters.find(c => c.id === charId);
+            if (!char) {
+                alert('角色不存在');
+                return;
+            }
+
+            document.getElementById('modalTitle').textContent = '编辑角色';
+            document.getElementById('saveCharBtn').textContent = '保存修改';
+            document.getElementById('saveCharBtn').onclick = () => updateCharacter(charId);
+            fillCharacterForm(char);
+            document.getElementById('characterModal').classList.add('active');
+        }
+
+        // 更新角色
+        async function updateCharacter(charId) {
+            const name = document.getElementById('charName').value.trim();
+            if (!name) {
+                alert('请输入角色名称');
+                return;
+            }
+
+            const isGlobal = document.getElementById('charIsGlobal').value === 'true';
+            const projectId = isGlobal ? null : currentProjectId;
+
+            const data = {
+                name: name,
+                gender: document.getElementById('charGender').value || null,
+                age: document.getElementById('charAge').value || null,
+                occupation: document.getElementById('charOccupation').value || null,
+                mbti: document.getElementById('charMbti').value || null,
+                personality_traits: document.getElementById('charTraits').value.split(',').map(s => s.trim()).filter(Boolean),
+                speaking_style: document.getElementById('charSpeakingStyle').value || null,
+                catchphrases: document.getElementById('charCatchphrases').value.split(',').map(s => s.trim()).filter(Boolean),
+                background: document.getElementById('charBackground').value || null,
+                relationships: getRelationshipsData(),
+                project_id: projectId
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/character/${charId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('角色更新成功！');
+                    closeCharacterModal();
+                    loadCharacters();
+                }
+            } catch (e) {
+                // Local fallback
+                let chars = JSON.parse(localStorage.getItem('characters') || '[]');
+                const index = chars.findIndex(c => c.id === charId);
+                if (index !== -1) {
+                    chars[index] = {
+                        ...chars[index],
+                        project_id: projectId,
+                        basic: { name: data.name, gender: data.gender, age: data.age, occupation: data.occupation },
+                        personality: { traits: data.personality_traits, mbti: data.mbti },
+                        speaking: { catchphrases: data.catchphrases, style_description: data.speaking_style },
+                        background: { origin: data.background },
+                        relationships: getRelationshipsData().reduce((acc, r) => {
+                            acc[r.related_name] = { type: r.type, description: r.description, story: r.story };
+                            return acc;
+                        }, {})
+                    };
+                    localStorage.setItem('characters', JSON.stringify(chars));
+                    alert('角色更新成功！(本地存储)');
+                    closeCharacterModal();
+                    loadCharacters();
+                }
+            }
+        }
+
+        // 删除角色
+        async function deleteCharacter(charId, charName) {
+            if (!confirm(`确定要删除角色「${charName}」吗？\n此操作不可恢复。`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/character/${charId}`, {
+                    method: 'DELETE'
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('角色删除成功！');
+                    loadCharacters();
+                }
+            } catch (e) {
+                // Local fallback
+                let chars = JSON.parse(localStorage.getItem('characters') || '[]');
+                chars = chars.filter(c => c.id !== charId);
+                localStorage.setItem('characters', JSON.stringify(chars));
+                alert('角色删除成功！(本地存储)');
+                loadCharacters();
+            }
+        }
+
+        // 查看角色详情
+        function viewCharacter(charId) {
+            const char = currentCharacters.find(c => c.id === charId);
+            if (!char) return;
+
+            document.getElementById('detailCharName').textContent = char.basic?.name || char.name || '角色详情';
+            const gender = char.basic?.gender || char.gender || '';
+            const genderText = gender === 'male' ? '男' : gender === 'female' ? '女' : '';
+            const relationships = char.relationships || {};
+            let relHtml = '';
+            if (Object.keys(relationships).length > 0) {
+                relHtml = '<div style="margin-top:16px;"><strong>人物关系：</strong><ul style="margin-top:8px;padding-left:20px;">';
+                for (const [relName, relData] of Object.entries(relationships)) {
+                    const typeText = {
+                        'friend': '朋友', 'lover': '恋人', 'family': '家人',
+                        'colleague': '同事', 'rival': '竞争对手', 'mentor': '师徒', 'enemy': '敌人'
+                    }[relData.type] || relData.type;
+                    relHtml += `<li><strong>与${relName}</strong>（${typeText}）`;
+                    if (relData.description) relHtml += `：${relData.description}`;
+                    if (relData.story) relHtml += `<br><em style="color:var(--text-light);font-size:0.9rem;">故事：${relData.story}</em>`;
+                    relHtml += '</li>';
+                }
+                relHtml += '</ul></div>';
+            }
+            document.getElementById('characterDetailContent').innerHTML = `
+                <div style="line-height:1.8;">
+                    ${char.basic?.name ? `<p><strong>姓名：</strong>${char.basic.name}</p>` : ''}
+                    ${genderText ? `<p><strong>性别：</strong>${genderText}</p>` : ''}
+                    ${char.basic?.age ? `<p><strong>年龄：</strong>${char.basic.age}岁</p>` : ''}
+                    ${char.basic?.occupation ? `<p><strong>职业：</strong>${char.basic.occupation}</p>` : ''}
+                    ${char.personality?.mbti || char.mbti ? `<p><strong>MBTI：</strong>${char.personality?.mbti || char.mbti}</p>` : ''}
+
+                    ${char.personality?.traits?.length || char.personality_traits?.length ?
+                        `<p><strong>性格特点：</strong>${(char.personality?.traits || char.personality_traits).join('、')}</p>` : ''}
+
+                    ${char.speaking?.style_description || char.speaking_style ?
+                        `<p><strong>说话风格：</strong>${char.speaking?.style_description || char.speaking_style}</p>` : ''}
+
+                    ${char.speaking?.catchphrases?.length || char.catchphrases?.length ?
+                        `<p><strong>口头禅：</strong>${(char.speaking?.catchphrases || char.catchphrases).join('、')}</p>` : ''}
+
+                    ${char.background?.origin || char.background ?
+                        `<p><strong>背景故事：</strong>${char.background?.origin || char.background}</p>` : ''}
+
+                    ${relHtml}
+
+                    <p><strong>归属：</strong>${char.project_id === null || char.project_id === undefined ? '<span class="ownership-badge ownership-global">全局角色</span>' : '<span class="ownership-badge ownership-project">专属角色</span>'}</p>
+                </div>
+            `;
+            document.getElementById('editCharBtn').onclick = () => {
+                closeCharacterDetailModal();
+                editCharacter(charId);
+            };
+            document.getElementById('characterDetailModal').classList.add('active');
+        }
+
+        function closeCharacterDetailModal() {
+            document.getElementById('characterDetailModal').classList.remove('active');
+        }
+
+        // ========== 素材管理 ==========
+
+        async function loadMaterials() {
+            // 素材暂时使用 localStorage，前端演示用
+            renderMaterials();
+        }
+
+        // 添加素材
+        async function addMaterial() {
+            const text = document.getElementById('materialText').value.trim();
+            if (!text) {
+                alert('请输入素材内容');
+                return;
+            }
+
+            const materials = JSON.parse(localStorage.getItem('materials') || '[]');
+            materials.push({
+                id: Date.now().toString(),
+                content: text,
+                name: '文本素材',
+                project_id: currentProjectId
+            });
+            localStorage.setItem('materials', JSON.stringify(materials));
+
+            document.getElementById('materialText').value = '';
+            renderMaterials();
+            alert('素材添加成功！');
+        }
+
+        function renderMaterials() {
+            const container = document.getElementById('materialList');
+            const materials = JSON.parse(localStorage.getItem('materials') || '[]');
+            
+            // 筛选当前项目的素材 + 全局素材
+            const filtered = materials.filter(m => 
+                m.project_id === currentProjectId || m.project_id === null || m.project_id === undefined
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = '<p style="font-size:0.9rem;color:var(--text-light);margin-bottom:8px;">已添加素材：</p>' +
+                filtered.map(m => {
+                    const isGlobal = m.project_id === null || m.project_id === undefined;
+                    return `
+                        <div class="outline-item" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span>
+                                ${m.name || '素材'}
+                                <span class="ownership-badge ${isGlobal ? 'ownership-global' : 'ownership-project'}" style="font-size:0.7rem;">
+                                    ${isGlobal ? '全局' : '专属'}
+                                </span>
+                            </span>
+                            <button onclick="removeMaterial('${m.id}')" style="background:none;border:none;color:var(--error);cursor:pointer;">删除</button>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function removeMaterial(id) {
+            const materials = JSON.parse(localStorage.getItem('materials') || '[]');
+            const filtered = materials.filter(m => m.id !== id);
+            localStorage.setItem('materials', JSON.stringify(filtered));
+            renderMaterials();
+        }
+
+        // ========== 写作功能 ==========
+
+        // 开始写作
+        async function startWriting() {
+            const topic = document.getElementById('topic').value.trim();
+            if (!topic) {
+                alert('请输入写作主题');
+                return;
+            }
+
+            // 检查是否选择了项目
+            if (!currentProjectId) {
+                alert('请先创建一个工作或选择一个已有工作');
+                return;
+            }
+
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>检查配置...';
+
+            // 先检查后端配置状态
+            let configOk = false;
+            try {
+                const configRes = await fetch(`${API_BASE}/config/status`, { method: 'GET' });
+                if (configRes.ok) {
+                    const configData = await configRes.json();
+                    if (configData.success && !configData.data.api_key_configured) {
+                        alert('API Key 未配置！当前使用 ' + configData.data.active_llm + '\n请在项目根目录 .env 文件中配置对应 API Key，然后重启后端服务');
+                        btn.disabled = false;
+                        btn.innerHTML = '开始写作';
+                        return;
+                    }
+                    configOk = true;
+                }
+            } catch (configErr) {
+                alert('无法连接到后端服务 (localhost:8000)\n请确保后端已启动：python -m app.main');
+                btn.disabled = false;
+                btn.innerHTML = '开始写作';
+                return;
+            }
+
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p class="loading-text">正在构思大纲...</p>
+                </div>
+            `;
+
+            const request = {
+                project_id: currentProjectId,
+                task_type: document.getElementById('taskType').value,
+                topic: topic,
+                style: document.getElementById('style').value,
+                iterations: parseInt(document.getElementById('iterations').value),
+                character_ids: document.getElementById('protagonistSelect').value
+                    ? [document.getElementById('protagonistSelect').value]
+                    : [],
+                material_ids: []
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/write/sync`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(request)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    renderResult(result.data, request.task_type);
+                } else {
+                    throw new Error(result.error || result.message || '写作失败');
+                }
+            } catch (e) {
+                console.error('Writing error:', e);
+                alert('写作请求失败：' + e.message);
+                resultArea.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #888;">
+                        <p style="font-size: 18px; margin-bottom: 12px;">⚠️ 写作请求失败</p>
+                        <p>${e.message}</p>
+                        <p style="margin-top: 16px; font-size: 13px; color: #aaa;">请检查后端服务是否正常运行，或查看控制台日志</p>
+                    </div>
+                `;
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '开始写作';
+        }
+
+        function renderResult(data, taskType) {
+            const resultArea = document.getElementById('resultArea');
+            const outline = data.outline || {};
+            const tt = taskType || 'novel';
+
+            let outlineHtml = '';
+            if (outline.outline && outline.outline.length > 0) {
+                const items = outline.outline.map((ch, idx) => {
+                    let title;
+                    if (tt === 'copywriting') {
+                        title = ch.title || '版本' + String.fromCharCode(65 + idx);
+                    } else if (tt === 'script') {
+                        title = '场景 ' + (idx + 1) + (ch.title ? '：' + ch.title : '');
+                    } else if (tt === 'paper') {
+                        title = ch.title || '学术模块 ' + (idx + 1);
+                    } else if (tt === 'article') {
+                        title = ch.title || '论点 ' + (idx + 1);
+                    } else {
+                        title = '第' + (ch.chapter || idx + 1) + '章：' + (ch.title || '未命名');
+                    }
+                    const points = (ch.key_points || []).map(p => '<li>' + p + '</li>').join('');
+                    return '<div class="outline-item"><h4>' + title + '</h4><ul>' + points + '</ul></div>';
+                }).join('');
+                outlineHtml = '<div style="margin-bottom:20px;"><h4 style="margin-bottom:12px;">📋 大纲</h4>' + items + '</div>';
+            }
+
+            resultArea.innerHTML = `
+                <div class="output-header">
+                    <div class="output-meta">
+                        <span>📊 迭代 ${data.iterations} 次</span>
+                        ${data.final_score ? `<span>⭐ 评分 ${data.final_score}</span>` : ''}
+                    </div>
+                </div>
+                ${outlineHtml}
+                <div class="output-content">${data.content || '无内容'}</div>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="copyContent()">复制</button>
+                    <button class="btn btn-secondary" onclick="downloadContent()">导出</button>
+                    <button class="btn btn-primary" onclick="startWriting()">重新生成</button>
+                </div>
+            `;
+        }
+
+        // 根据任务类型和风格获取演示内容
+        function getDemoContent(taskType, style, topic) {
+            const demos = {
+                copywriting: {
+                    outline: `
+                        <div class="outline-item"><h4>版本A：痛点共鸣型</h4><ul><li>痛点切入：520还在纠结送什么？</li><li>情感共鸣：礼物是爱的翻译器</li><li>产品价值：让TA感受到用心</li><li>CTA：立刻定制专属惊喜</li></ul></div>
+                        <div class="outline-item"><h4>版本B：浪漫故事型</h4><ul><li>场景：一个普通的520早晨</li><li>转折：不经意的小惊喜</li><li>高潮：TA眼中的光芒</li><li>CTA：为TA创造同款浪漫</li></ul></div>`,
+                    content: `主题：「${topic}」\n\n【版本A】\n\n520快到了，你还在纠结送什么？\n\n一束花？太普通。一顿晚餐？太随意。\n\n真正让TA心动的，是你花的那份心思。\n\n这个520，让礼物成为爱的翻译器。\n\n👉 点击定制专属浪漫，给TA一个意想不到的惊喜。\n\n（以上为文案演示内容，连接API后生成完整创作）`
+                },
+                novel: {
+                    outline: `
+                        <div class="outline-item"><h4>第1章：故事开端</h4><ul><li>介绍主要角色和背景</li><li>建立故事的基本设定</li><li>引出核心冲突</li></ul></div>
+                        <div class="outline-item"><h4>第2章：情节发展</h4><ul><li>主角面临挑战</li><li>与其他角色互动</li><li>埋下伏笔</li></ul></div>`,
+                    content: `主题：「${topic}」\n\n第一章 故事开端\n\n阳光透过窗帘洒进房间，空气中弥漫着淡淡的咖啡香气。这是一个普通的早晨，却也是故事开始的地方。\n\n（以上为小说演示内容，连接API后生成完整创作）`
+                },
+                article: {
+                    outline: `
+                        <div class="outline-item"><h4>引言：为什么这个主题值得关注</h4><ul><li>引出当下现象或问题</li><li>提出核心疑问</li></ul></div>
+                        <div class="outline-item"><h4>论点一：第一层分析</h4><ul><li>观点陈述</li><li>案例支撑</li><li>逻辑推导</li></ul></div>
+                        <div class="outline-item"><h4>结论：启示与思考</h4><ul><li>总结核心观点</li><li>给读者的行动建议</li></ul></div>`,
+                    content: `主题：「${topic}」\n\n在这个信息爆炸的时代，我们每天都在接收海量的内容，却很少有真正触动人心的表达。\n\n今天，我想和你聊聊这个话题。\n\n（以上为文章演示内容，连接API后生成完整创作）`
+                },
+                paper: {
+                    outline: `
+                        <div class="outline-item"><h4>摘要要点</h4><ul><li>研究背景与问题</li><li>研究方法概述</li><li>核心发现摘要</li></ul></div>
+                        <div class="outline-item"><h4>研究背景</h4><ul><li>领域内现有研究</li><li>研究空白与问题</li></ul></div>
+                        <div class="outline-item"><h4>研究方法</h4><ul><li>数据来源</li><li>分析方法</li></ul></div>`,
+                    content: `主题：「${topic}」\n\n摘要\n\n本研究旨在探讨该领域的关键问题，通过系统的文献梳理和实证分析，揭示了当前研究的主要趋势和存在的不足。\n\n（以上为论文演示内容，连接API后生成完整创作）`
+                },
+                script: {
+                    outline: `
+                        <div class="outline-item"><h4>场景1：内景 - 咖啡厅 - 日</h4><ul><li>角色A独自坐在角落</li><li>手机响起，看了一眼又放下</li><li>镜头：咖啡杯上的水蒸气</li></ul></div>
+                        <div class="outline-item"><h4>场景2：外景 - 街道 - 日</h4><ul><li>角色B快步走来</li><li>电话再次响起</li><li>特写：犹豫的手指</li></ul></div>`,
+                    content: `主题：「${topic}」\n\n场景1\n内景 - 咖啡厅 - 日\n\n阳光透过落地窗洒进来，落在木质桌面上。A坐在角落，面前放着一杯已经凉掉的咖啡。\n\n手机响了。A看了一眼屏幕，手指悬在接听键上方，最终还是没有按下去。\n\n（以上为剧本演示内容，连接API后生成完整创作）`
+                }
+            };
+            return demos[taskType] || demos['novel'];
+        }
+
+        function renderDemoResult(topic) {
+            const taskType = document.getElementById('taskType').value || 'novel';
+            const demo = getDemoContent(taskType, null, topic);
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `
+                <div class="output-header">
+                    <div class="output-meta">
+                        <span>演示模式</span>
+                    </div>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <h4 style="margin-bottom:12px;">📋 大纲预览</h4>
+                    ${demo.outline}
+                </div>
+                <div class="output-content">${demo.content}</div>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="copyContent()">复制</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('apiKeyModal').style.display='block'">配置API</button>
+                </div>
+            `;
+        }
+
+        function copyContent() {
+            const content = document.querySelector('.output-content')?.textContent;
+            if (content) {
+                navigator.clipboard.writeText(content);
+                alert('已复制到剪贴板！');
+            }
+        }
+
+        function downloadContent() {
+            const content = document.querySelector('.output-content')?.textContent;
+            if (content) {
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'writing_output.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // ========== 初始化 ==========
+
+        // 从 localStorage 恢复当前项目
+        const savedProjectId = localStorage.getItem('currentProjectId');
+        if (savedProjectId) {
+            currentProjectId = savedProjectId;
+            currentProjectName = localStorage.getItem('currentProjectName') || '';
+        }
+
+        // 初始化加载
+        loadProjects().then(() => {
+            renderProjectSelect();
+            loadCharacters();
+            loadMaterials();
+        });
+    </script>
+</body>
+</html>
