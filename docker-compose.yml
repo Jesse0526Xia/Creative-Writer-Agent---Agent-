@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  creative-writer:
+    build: .
+    container_name: creative-writer-agent
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./materials:/app/materials
+    environment:
+      # 豆包 API
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY:-}
+      - DOUBAO_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+      - DOUBAO_MODEL=doubao-pro-32k
+      # 或 Kimi API
+      # - KIMI_API_KEY=${KIMI_API_KEY:-}
+      # - KIMI_BASE_URL=https://api.moonshot.cn/v1
+      # - KIMI_MODEL=moonshot-v1-8k
+      # - ACTIVE_LLM=kimi
+      - ACTIVE_LLM=doubao
+      # Embedding配置
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+      - EMBEDDING_DEVICE=cpu
+      # 数据库
+      - DATABASE_URL=sqlite+aiosqlite:///data/db/writer.db
+      # 服务器
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
